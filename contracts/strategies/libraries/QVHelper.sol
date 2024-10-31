@@ -45,11 +45,9 @@ library QVHelper {
     /// @param _state The voting state
     /// @param _recipient The recipient to vote
     /// @param _voiceCredits The amount of voice credits to cast
-    function voteSingleWithVoiceCredits(
-        VotingState storage _state,
-        address _recipient,
-        uint256 _voiceCredits
-    ) internal {
+    function voteSingleWithVoiceCredits(VotingState storage _state, address _recipient, uint256 _voiceCredits)
+        internal
+    {
         // Add the voice credits to the recipient
         _state.recipientVoiceCredits[_recipient] += _voiceCredits;
         uint256 _votes = FixedPointMathLib.sqrt(_voiceCredits);
@@ -79,11 +77,7 @@ library QVHelper {
     /// @param _state The voting state
     /// @param _recipient The recipient to vote
     /// @param _votes The amount of votes to cast
-    function voteSingle(
-        VotingState storage _state,
-        address _recipient,
-        uint256 _votes
-    ) internal {
+    function voteSingle(VotingState storage _state, address _recipient, uint256 _votes) internal {
         // Add the votes to the recipient
         _state.recipientVotes[_recipient] += _votes;
         // Add the total votes

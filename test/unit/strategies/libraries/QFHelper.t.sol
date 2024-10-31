@@ -28,7 +28,9 @@ contract MockQFHelperTest is Test {
         donation2[0] = DONATION_2;
     }
 
-    function test_FundRevertWhen_InputArraysMissmatch(address[] memory _recipients, uint256[] memory _amounts) external {
+    function test_FundRevertWhen_InputArraysMissmatch(address[] memory _recipients, uint256[] memory _amounts)
+        external
+    {
         vm.assume(_recipients.length != _amounts.length);
 
         // it should revert
@@ -54,7 +56,9 @@ contract MockQFHelperTest is Test {
         assertGt(mockQFHelper.getTotalContributions(), 0);
     }
 
-    function test_FundSingleShouldUpdateTheSqrtDonationsSumOfTheRecipient(address _recipient, uint256 _amount) external {
+    function test_FundSingleShouldUpdateTheSqrtDonationsSumOfTheRecipient(address _recipient, uint256 _amount)
+        external
+    {
         vm.assume(_recipient != address(0));
         _amount = bound(_amount, 1, 100 ether);
 

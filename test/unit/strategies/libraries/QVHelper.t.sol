@@ -31,7 +31,7 @@ contract MockQVHelperTest is Test {
     }
 
     function test_VoteWithVoiceCreditsWhenInputArraysMatch() external {
-         address[] memory _recipients = new address[](2);
+        address[] memory _recipients = new address[](2);
         _recipients[0] = recipient1;
         _recipients[1] = recipient2;
 
@@ -46,7 +46,10 @@ contract MockQVHelperTest is Test {
         assertEq(mockQVHelper.getVoiceCredits(_recipients[1]), 2);
     }
 
-    function test_VoteSingleWithVoiceCreditsShouldUpdateTheRecipientsVoiceCredits(address _recipient, uint256 _voiceCredits) external {
+    function test_VoteSingleWithVoiceCreditsShouldUpdateTheRecipientsVoiceCredits(
+        address _recipient,
+        uint256 _voiceCredits
+    ) external {
         vm.assume(_recipient != address(0));
         _voiceCredits = bound(_voiceCredits, 1, 1000);
 
@@ -56,7 +59,9 @@ contract MockQVHelperTest is Test {
         assertEq(mockQVHelper.getVoiceCredits(_recipient), _voiceCredits);
     }
 
-    function test_VoteSingleWithVoiceCreditsShouldUpdateTheRecipientsVotes(address _recipient, uint256 _voiceCredits) external {
+    function test_VoteSingleWithVoiceCreditsShouldUpdateTheRecipientsVotes(address _recipient, uint256 _voiceCredits)
+        external
+    {
         vm.assume(_recipient != address(0));
         _voiceCredits = bound(_voiceCredits, 1, 1000);
 
@@ -66,7 +71,9 @@ contract MockQVHelperTest is Test {
         assertEq(mockQVHelper.getVotes(_recipient), FixedPointMathLib.sqrt(_voiceCredits));
     }
 
-    function test_VoteSingleWithVoiceCreditsShouldUpdateTheTotalVoiceCredits(address _recipient, uint256 _voiceCredits) external {
+    function test_VoteSingleWithVoiceCreditsShouldUpdateTheTotalVoiceCredits(address _recipient, uint256 _voiceCredits)
+        external
+    {
         vm.assume(_recipient != address(0));
         _voiceCredits = bound(_voiceCredits, 1, 1000);
 
@@ -76,7 +83,9 @@ contract MockQVHelperTest is Test {
         assertEq(mockQVHelper.getTotalVoiceCredits(), _voiceCredits);
     }
 
-    function test_VoteSingleWithVoiceCreditsShouldUpdateTheTotalVotes(address _recipient, uint256 _voiceCredits) external {
+    function test_VoteSingleWithVoiceCreditsShouldUpdateTheTotalVotes(address _recipient, uint256 _voiceCredits)
+        external
+    {
         vm.assume(_recipient != address(0));
         _voiceCredits = bound(_voiceCredits, 1, 1000);
 
