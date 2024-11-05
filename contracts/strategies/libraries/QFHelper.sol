@@ -48,7 +48,7 @@ library QFHelper {
         uint256 _sqrtDonationsSum = _state.sqrtDonationsSum[_recipient];
         _sqrtDonationsSum += FixedPointMathLib.sqrt(_amount);
 
-        // Calculate the total contributions delta for this single recipient
+        // Calculate the contribution delta for this single recipient
         uint256 _contributionDelta = _sqrtDonationsSum ** 2 - _state.sqrtDonationsSum[_recipient] ** 2;
 
         // Update the state
