@@ -14,6 +14,7 @@ contract RegistryUnit is Test {
     using stdStorage for StdStorage;
 
     MockMockRegistry public registry;
+    address public constant NATIVE = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
     event ProfileCreated(
         bytes32 indexed profileId, uint256 nonce, string name, Metadata metadata, address owner, address anchor
