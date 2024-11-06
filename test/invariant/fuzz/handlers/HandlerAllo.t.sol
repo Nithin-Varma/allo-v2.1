@@ -9,58 +9,6 @@ import {FuzzERC20} from "../helpers/FuzzERC20.sol";
 contract HandlerAllo is Setup {
     mapping(uint256 _poolId => address[] _recipients) ghost_recipients;
 
-    function handler_createPool(
-        uint256 _msgValue,
-        uint256 _seedPoolStrategy
-    ) public {
-        _seedPoolStrategy = bound(
-            _seedPoolStrategy,
-            uint256(type(PoolStrategies).min) + 1, // Avoid None elt
-            uint256(type(PoolStrategies).max)
-        );
-
-        // Get the profile ID
-        IRegistry.Profile memory profile = registry.getProfileByAnchor(
-            _ghost_anchorOf[msg.sender]
-        );
-
-        // Avoid EOA
-        if (profile.anchor == address(0)) return;
-
-        // Avoid redeploying pool with a strategy already tested
-        if (_strategyHasImplementation(PoolStrategies(_seedPoolStrategy))) {
-            return;
-        }
-
-        // Create a pool
-        (bool succ, bytes memory ret) = targetCall(
-            address(allo),
-            _msgValue,
-            abi.encodeCall(
-                allo.createPool,
-                (
-                    profile.id,
-                    _strategyImplementations[PoolStrategies(_seedPoolStrategy)],
-                    bytes(""),
-                    address(token),
-                    0,
-                    profile.metadata,
-                    new address[](0)
-                )
-            )
-        );
-
-        if (succ) {
-            uint256 _poolId = abi.decode(ret, (uint256));
-            ghost_poolIds.push(_poolId);
-            ghost_poolAdmins[_poolId] = msg.sender;
-            assertTrue(
-                allo.isPoolAdmin(_poolId, msg.sender),
-                "Admin not set handler_createPool"
-            );
-        }
-    }
-
     function handler_updatePoolMetadata(
         uint256 _idSeed,
         uint256 _metadataProtocol,
