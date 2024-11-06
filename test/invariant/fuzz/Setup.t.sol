@@ -49,13 +49,24 @@ contract Setup is Actors, Pools {
         registry = new Registry();
 
         // Deploy the proxy, pointing to the implementation
-        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(implementation, proxyOwner, "");
+        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
+            implementation,
+            proxyOwner,
+            ""
+        );
 
         allo = Allo(payable(address(proxy)));
 
         // Initialize
         vm.prank(protocolDeployer);
-        allo.initialize(protocolDeployer, address(registry), payable(treasury), percentFee, baseFee, forwarder);
+        allo.initialize(
+            protocolDeployer,
+            address(registry),
+            payable(treasury),
+            percentFee,
+            baseFee,
+            forwarder
+        );
 
         // Deploy strategies implementations
         _initImplementations(address(allo));
@@ -63,13 +74,20 @@ contract Setup is Actors, Pools {
         // Deploy token
         token = ERC20(address(new FuzzERC20()));
 
-        // Create profile for 4 addresses
-        for (uint256 i; i < 4; i++) {
+        // Create profile for all addresses
+        for (uint256 i; i < _ghost_actors.length; i++) {
             bytes32 _id = registry.createProfile(
-                0, "a", Metadata({protocol: i + 1, pointer: ""}), _ghost_actors[i], new address[](0)
+                0,
+                "a",
+                Metadata({protocol: i + 1, pointer: ""}),
+                _ghost_actors[i],
+                new address[](0)
             );
 
-            _addAnchorToActor(_ghost_actors[i], registry.getProfileById(_id).anchor, _id);
+            _addAnchorToActor(
+                _ghost_actors[i],
+                registry.getProfileById(_id).anchor
+            );
         }
 
         // Create pools for each strategy
@@ -87,7 +105,9 @@ contract Setup is Actors, Pools {
         for (uint256 i = 1; i <= uint256(type(PoolStrategies).max); i++) {
             address _deployer = _ghost_actors[i % 4];
 
-            IRegistry.Profile memory profile = registry.getProfileByAnchor(_ghost_anchorOf[_deployer]);
+            IRegistry.Profile memory profile = registry.getProfileByAnchor(
+                _ghost_anchorOf[_deployer]
+            );
 
             bytes memory _metadata;
 
@@ -106,9 +126,9 @@ contract Setup is Actors, Pools {
                     token,
                     true
                 );
-            } else if (PoolStrategies(i) == PoolStrategies.EasyRPGF) {} else if (
-                PoolStrategies(i) == PoolStrategies.ImpactStream
-            ) {
+            } else if (
+                PoolStrategies(i) == PoolStrategies.EasyRPGF
+            ) {} else if (PoolStrategies(i) == PoolStrategies.ImpactStream) {
                 _metadata = abi.encode(
                     IRecipientsExtension.RecipientInitializeData({
                         metadataRequired: false,
@@ -162,7 +182,10 @@ contract Setup is Actors, Pools {
             );
 
             ghost_poolAdmins[_poolId] = _deployer;
-            assertTrue(allo.isPoolAdmin(_poolId, _deployer), "Admin not set _initPools_");
+            assertTrue(
+                allo.isPoolAdmin(_poolId, _deployer),
+                "Admin not set _initPools_"
+            );
 
             _recordPool(_poolId, PoolStrategies(i));
         }

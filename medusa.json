@@ -4,7 +4,7 @@
     "workerResetLimit": 50,
     "timeout": 0,
     "testLimit": 0,
-    "shrinkLimit": 5000,
+    "shrinkLimit": 100000,
     "callSequenceLength": 100,
     "corpusDirectory": "test/invariant/fuzz/corpus",
     "coverageEnabled": true,
