@@ -402,6 +402,8 @@ contract RegistryUnit is Test {
     {
         vm.assume(_recipient != address(0));
         vm.assume(_token != address(vm));
+        vm.assume(_token != NATIVE);
+        assumeNotPrecompile(_token);
 
         vm.mockCall(_token, abi.encodeWithSignature("balanceOf(address)", address(registry)), abi.encode(_amount));
         vm.mockCall(_token, abi.encodeWithSignature("transfer(address,uint256)", _recipient, _amount), abi.encode(true));
