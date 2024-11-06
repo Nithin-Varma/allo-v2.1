@@ -61,18 +61,30 @@ contract Pools is Utils {
         allo = Allo(_allo);
     }
 
-    function _recordPool(uint256 _poolId, PoolStrategies _strategy) internal {
+    function _recordPool(uint256 _poolId) internal {
         ghost_poolIds.push(_poolId);
     }
 
     // reverse lookup pool id -> strategy type
     function _poolStrategy(uint256 _poolId) internal returns (PoolStrategies) {
         IAllo.Pool memory _pool = allo.getPool(_poolId);
-        for (uint256 i; i < uint256(type(PoolStrategies).max); i++) {
+        for (uint256 i = 1; i <= uint256(type(PoolStrategies).max); i++) {
             if (
                 _strategyImplementations[PoolStrategies(i)] ==
                 address(_pool.strategy)
             ) return PoolStrategies(i);
+        }
+
+        emit TestFailure("Wrong pool strategy implementation id");
+    }
+
+    // reverse lookup pool address -> strategy type
+    function _poolStrategy(
+        address _strategy
+    ) internal returns (PoolStrategies) {
+        for (uint256 i = 1; i <= uint256(type(PoolStrategies).max); i++) {
+            if (_strategyImplementations[PoolStrategies(i)] == _strategy)
+                return PoolStrategies(i);
         }
 
         emit TestFailure("Wrong pool strategy implementation address");

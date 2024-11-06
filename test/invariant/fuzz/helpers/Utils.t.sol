@@ -128,6 +128,17 @@ contract Utils {
         }
     }
 
+    function assertFalse(bool a) internal {
+        assertFalse(a, "assertFalse: a is true");
+    }
+
+    function assertFalse(bool a, string memory reason) internal {
+        if (a) {
+            emit TestFailure(reason);
+            assert(false);
+        }
+    }
+
     function fail(string memory reason) internal {
         emit TestFailure(reason);
         assert(false);

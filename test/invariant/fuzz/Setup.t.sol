@@ -103,7 +103,7 @@ contract Setup is Actors, Pools {
         DEFAULT_MAX_BID = 1000;
 
         for (uint256 i = 1; i <= uint256(type(PoolStrategies).max); i++) {
-            address _deployer = _ghost_actors[i % 4];
+            address _deployer = _ghost_actors[i % 4]; // First 4 actors have an associated anchor
 
             IRegistry.Profile memory profile = registry.getProfileByAnchor(
                 _ghost_anchorOf[_deployer]
@@ -187,7 +187,7 @@ contract Setup is Actors, Pools {
                 "Admin not set _initPools_"
             );
 
-            _recordPool(_poolId, PoolStrategies(i));
+            _recordPool(_poolId);
         }
     }
 }

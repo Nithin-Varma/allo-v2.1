@@ -8,6 +8,8 @@ import {IAllo, Allo, Metadata} from "contracts/core/Allo.sol";
 import {IRegistry, Registry} from "contracts/core/Registry.sol";
 import {IBaseStrategy} from "contracts/strategies/BaseStrategy.sol";
 import {IAllocationExtension} from "contracts/strategies/extensions/allocate/IAllocationExtension.sol";
+import {IAllocatorsAllowlistExtension} from "contracts/strategies/extensions/allocate/IAllocatorsAllowlistExtension.sol";
+import {Errors} from "contracts/core/libraries/Errors.sol";
 
 import {FuzzERC20, ERC20} from "../helpers/FuzzERC20.sol";
 
@@ -24,6 +26,7 @@ contract PropertiesAllo is HandlersParent {
         _idSeed = bound(_idSeed, 0, ghost_poolIds.length - 1);
         uint256 _poolId = ghost_poolIds[_idSeed];
 
+        address _strategy = address(allo.getPool(_poolId).strategy);
         bytes32 _strategyId = allo.getPool(_poolId).strategy.getStrategyId();
 
         address[] memory _recipients = new address[](1);
@@ -35,15 +38,12 @@ contract PropertiesAllo is HandlersParent {
         uint256[] memory _amounts = new uint256[](1);
         _amounts[0] = _amount;
 
-        bytes memory _data = abi.encode(_tokens);
-
-        // For now, only DirectAllocation strategy is supported
-        if (_strategyId != keccak256(abi.encode("DirectAllocation"))) {
-            return;
-        }
+        bytes memory _data = _poolStrategy(_strategy) ==
+            PoolStrategies.DonationVoting
+            ? abi.encode(token, new bytes(0))
+            : abi.encode(_tokens);
 
         address _allocator = _ghost_anchorOf[msg.sender];
-        address _strategy = address(allo.getPool(_poolId).strategy);
 
         uint256 _recipientPreviousBalance;
 
@@ -52,7 +52,7 @@ contract PropertiesAllo is HandlersParent {
         token.approve(_strategy, _amount);
         _recipientPreviousBalance = token.balanceOf(_recipient);
 
-        (bool _success, ) = targetCall(
+        (bool _success, bytes memory _ret) = targetCall(
             address(allo),
             0,
             abi.encodeCall(
@@ -67,10 +67,30 @@ contract PropertiesAllo is HandlersParent {
                 _allocator == _recipient
                     ? _recipientPreviousBalance
                     : _recipientPreviousBalance + _amount,
-                "property-id 1-a: allocate failed"
+                "property-id 1-a: wrong balancer after allocation"
             );
+
+            if (_poolStrategy(_strategy) == PoolStrategies.QuadraticVoting)
+                assertTrue(
+                    IAllocatorsAllowlistExtension(address(_strategy))
+                        .allowedAllocators(_allocator)
+                );
         } else {
-            fail("property-id 1-a: allocate failed");
+            if (_poolStrategy(_strategy) == PoolStrategies.QuadraticVoting)
+                assertFalse(
+                    IAllocatorsAllowlistExtension(address(_strategy))
+                        .allowedAllocators(_allocator)
+                );
+            else if (
+                _poolStrategy(_strategy) == PoolStrategies.RFP ||
+                _poolStrategy(_strategy) == PoolStrategies.EasyRPGF
+            )
+                assertEq(
+                    abi.decode(_ret, (bytes4)),
+                    bytes4(Errors.NOT_IMPLEMENTED.selector),
+                    "property-id 1-a: wrong allocate() revert"
+                ); // allocate not implemented
+            else fail("property-id 1-a: allocate call failed");
         }
     }
 
@@ -137,6 +157,12 @@ contract PropertiesAllo is HandlersParent {
 
     ///@custom:property-id 4
     ///@custom:property profile owner can always create a pool
+    ///@custom:property-id 7
+    ///@custom:property profile member can always create a pool
+    ///@custom:property-id 8
+    ///@custom:property only profile owner or member can create a pool
+    ///@custom:property-id 9
+    ///@custom:property initial admin is always the creator of the pool
     function prop_profileOwnerCanAlwaysCreateAPool(uint256 _msgValue) public {
         IRegistry.Profile memory _profile = registry.getProfileByAnchor(
             msg.sender
@@ -199,12 +225,6 @@ contract PropertiesAllo is HandlersParent {
         address[] memory _members = new address[](1);
         address _newMember = _pickActor(_actorSeed);
         _members[0] = _newMember;
-
-        // (bool _success, ) = targetCall(
-        //     address(registry),
-        //     0,
-        //     abi.encodeCall(registry.addMembers, (_profile.id, _members))
-        // );
 
         vm.prank(msg.sender);
         (bool _success, ) = address(registry).call(
@@ -312,18 +332,6 @@ contract PropertiesAllo is HandlersParent {
             }
         }
     }
-
-    ///@custom:property-id 7
-    ///@custom:property profile member can always create a pool
-    /// covered with property-id 4
-
-    ///@custom:property-id 8
-    ///@custom:property only profile owner or member can create a pool
-    /// covered with property-id 4
-
-    ///@custom:property-id 9
-    ///@custom:property initial admin is always the creator of the pool
-    /// covered with property-id 4
 
     ///@custom:property-id 10
     ///@custom:property pool admin can always change admin (but not to address(0))
@@ -466,19 +474,6 @@ contract PropertiesAllo is HandlersParent {
     ///@custom:property-id 12
     ///@custom:property pool manager can always withdraw within strategy limits/logic
 
-    event log(bool);
-
-    // function test_test() public {
-    //     vm.prank(0x0000000000000000000000000000000000040000);
-    //     this.prop_poolManagerCanAlwaysChangeMetadata(
-    //         111852118496956113788801317967118670568510553172829988353948379150616453238552,
-    //         Metadata({
-    //             protocol: 1684949272480257217570214335561051661891591425416010531931014640209948091012,
-    //             pointer: ""
-    //         })
-    //     );
-    // }
-
     ///@custom:property-id 13
     ///@custom:property pool manager can always change metadata
     function prop_poolManagerCanAlwaysChangeMetadata(
@@ -491,15 +486,6 @@ contract PropertiesAllo is HandlersParent {
 
         bool _authorized = (_isManager(msg.sender, _poolId) ||
             msg.sender == _admin);
-
-        emit log(_isManager(msg.sender, _poolId));
-        emit log(msg.sender == _admin);
-
-        // (bool _success, ) = targetCall(
-        //     address(allo),
-        //     0,
-        //     abi.encodeCall(allo.updatePoolMetadata, (_poolId, _metadata))
-        // );
 
         vm.prank(msg.sender);
         (bool _success, ) = address(allo).call(
@@ -725,6 +711,9 @@ contract PropertiesAllo is HandlersParent {
 
     ///@custom:property-id 18
     ///@custom:property anyone can increase fund in a pool, if strategy (hook) logic allows so and if more than base fee
+
+    ///@custom:property-id 19
+    ///@custom:property every deposit/pool creation must take the correct fee on the amount deposited, forwarded to the treasury
     function prop_anyoneCanIncreaseFundInAPool(
         uint256 _idSeed,
         uint256 _amount
@@ -793,8 +782,4 @@ contract PropertiesAllo is HandlersParent {
             );
         }
     }
-
-    ///@custom:property-id 19
-    ///@custom:property every deposit/pool creation must take the correct fee on the amount deposited, forwarded to the treasury
-    /// covered with property-id 18
 }
