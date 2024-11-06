@@ -2,14 +2,14 @@
 pragma solidity ^0.8.19;
 
 import {Test} from "forge-std/Test.sol";
-import {DirectAllocationStrategy} from "strategies/examples/direct-allocation/DirectAllocation.sol";
+import {DirectAllocation} from "strategies/examples/direct-allocation/DirectAllocation.sol";
 import {Errors} from "contracts/core/libraries/Errors.sol";
 
 contract DirectAllocationTest is Test {
     event Initialized(uint256 poolId, bytes data);
     event DirectAllocated(address indexed recipient, uint256 amount, address token, address sender);
 
-    DirectAllocationStrategy directAllocationStrategy;
+    DirectAllocation directAllocationStrategy;
 
     address mockAlloAddress;
 
@@ -17,7 +17,7 @@ contract DirectAllocationTest is Test {
         /// create a mock allo address
         mockAlloAddress = makeAddr("allo");
         /// create the direct allocation strategy
-        directAllocationStrategy = new DirectAllocationStrategy(mockAlloAddress);
+        directAllocationStrategy = new DirectAllocation(mockAlloAddress);
     }
 
     function test_InitializeWhenCalled(uint256 _poolId) external {

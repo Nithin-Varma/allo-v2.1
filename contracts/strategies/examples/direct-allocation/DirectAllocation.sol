@@ -8,10 +8,10 @@ import {BaseStrategy} from "strategies/BaseStrategy.sol";
 import {Errors} from "contracts/core/libraries/Errors.sol";
 import {Transfer} from "contracts/core/libraries/Transfer.sol";
 
-/// @title DirectAllocationStrategy
+/// @title DirectAllocation
 /// @dev The strategy only implements the allocate logic
 /// @notice A strategy that directly allocates funds to a recipient
-contract DirectAllocationStrategy is BaseStrategy, Errors {
+contract DirectAllocation is BaseStrategy, Errors {
     using Transfer for address;
 
     /// ===============================

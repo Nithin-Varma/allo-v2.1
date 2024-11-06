@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        export_type: ['interfaces', 'all']
+        export_type: ['all']
 
     env:
       PROJECT_NAME: '@allo-protocol/allo-v2.1'
@@ -45,9 +45,7 @@ jobs:
         with:
           package_name: ${{ env.PROJECT_NAME }}
           out: 'out'
-          interfaces: 'contracts/core/interfaces'
-          contracts: 'contracts/core'
-          libraries: "contracts/core/libraries"
+          contracts: 'contracts'
           export_type: '${{ matrix.export_type }}'
 
       - name: Update version

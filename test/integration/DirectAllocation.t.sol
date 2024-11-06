@@ -4,13 +4,13 @@ pragma solidity ^0.8.19;
 import {IAllo} from "contracts/core/interfaces/IAllo.sol";
 import {Metadata} from "contracts/core/Registry.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {DirectAllocationStrategy} from "strategies/examples/direct-allocation/DirectAllocation.sol";
+import {DirectAllocation} from "strategies/examples/direct-allocation/DirectAllocation.sol";
 import {IntegrationBase} from "./IntegrationBase.sol";
 import {Errors} from "contracts/core/libraries/Errors.sol";
 
 contract IntegrationDirectAllocationStrategy is IntegrationBase {
     IAllo public allo;
-    DirectAllocationStrategy public strategy;
+    DirectAllocation public strategy;
 
     uint256 public poolId;
 
@@ -19,7 +19,7 @@ contract IntegrationDirectAllocationStrategy is IntegrationBase {
 
         allo = IAllo(ALLO_PROXY);
 
-        strategy = new DirectAllocationStrategy(address(allo));
+        strategy = new DirectAllocation(address(allo));
 
         // Deal
         deal(DAI, userAddr, 100000 ether);

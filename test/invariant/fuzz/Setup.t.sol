@@ -7,7 +7,7 @@ import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transpa
 import {Allo, IAllo, Metadata} from "contracts/core/Allo.sol";
 import {Registry, Anchor} from "contracts/core/Anchor.sol";
 import {IRegistry} from "contracts/core/interfaces/IRegistry.sol";
-import {DirectAllocationStrategy} from "contracts/strategies/examples/direct-allocation/DirectAllocation.sol";
+import {DirectAllocation} from "contracts/strategies/examples/direct-allocation/DirectAllocation.sol";
 
 import {Actors} from "./helpers/Actors.t.sol";
 import {Utils} from "./helpers/Utils.t.sol";
@@ -27,7 +27,7 @@ contract Setup is Actors {
     Allo allo;
     Registry registry;
 
-    DirectAllocationStrategy strategy_directAllocation;
+    DirectAllocation strategy_directAllocation;
 
     ERC20 token;
 
@@ -66,7 +66,7 @@ contract Setup is Actors {
         );
 
         // Deploy base strategy
-        strategy_directAllocation = new DirectAllocationStrategy(address(allo));
+        strategy_directAllocation = new DirectAllocation(address(allo));
 
         // Deploy token
         token = ERC20(address(new FuzzERC20()));
