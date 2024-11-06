@@ -41,7 +41,7 @@ jobs:
         run: forge build
 
       - name: Export Solidity - Export Type ${{ matrix.export_type }}
-        uses: defi-wonderland/solidity-exporter-action@v2.1.0
+        uses: defi-wonderland/solidity-exporter-action@c39954b18f1105333bcd232ff527fe1b114f4d1d
         with:
           package_name: ${{ env.PROJECT_NAME }}
           out: 'out'
