@@ -1,6 +1,6 @@
 name: Canary Release
 
-on: workflow_dispatch
+on: [push]
 
 jobs:
   export:
