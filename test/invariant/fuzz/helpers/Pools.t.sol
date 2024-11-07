@@ -78,11 +78,15 @@ contract Pools is Utils {
         emit TestFailure("Wrong pool strategy implementation id");
     }
 
+    event log(address);
+
     // reverse lookup pool address -> strategy type
     function _poolStrategy(
         address _strategy
     ) internal returns (PoolStrategies) {
+        emit log(_strategy);
         for (uint256 i = 1; i <= uint256(type(PoolStrategies).max); i++) {
+            emit log(_strategyImplementations[PoolStrategies(i)]);
             if (_strategyImplementations[PoolStrategies(i)] == _strategy)
                 return PoolStrategies(i);
         }

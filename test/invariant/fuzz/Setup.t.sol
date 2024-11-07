@@ -181,6 +181,11 @@ contract Setup is Actors, Pools {
                 new address[](0)
             );
 
+            // Update the implementation used (as it's cloned)
+            _strategyImplementations[PoolStrategies(i)] = allo.getStrategy(
+                _poolId
+            );
+
             ghost_poolAdmins[_poolId] = _deployer;
             assertTrue(
                 allo.isPoolAdmin(_poolId, _deployer),

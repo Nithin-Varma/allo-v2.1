@@ -70,13 +70,26 @@ contract PropertiesAllo is HandlersParent {
                 "property-id 1-a: wrong balancer after allocation"
             );
 
-            if (_poolStrategy(_strategy) == PoolStrategies.QuadraticVoting)
+            if (
+                _poolStrategy(_strategy) == PoolStrategies.QuadraticVoting ||
+                _poolStrategy(_strategy) == PoolStrategies.ImpactStream
+            )
                 assertTrue(
                     IAllocatorsAllowlistExtension(address(_strategy))
                         .allowedAllocators(_allocator)
                 );
+            else if (_poolStrategy(_strategy) == PoolStrategies.DonationVoting)
+                assertTrue(
+                    IAllocationExtension(_strategy).allocationStartTime() <=
+                        block.timestamp &&
+                        IAllocationExtension(_strategy).allocationEndTime() >=
+                        block.timestamp
+                );
         } else {
-            if (_poolStrategy(_strategy) == PoolStrategies.QuadraticVoting)
+            if (
+                _poolStrategy(_strategy) == PoolStrategies.QuadraticVoting ||
+                _poolStrategy(_strategy) == PoolStrategies.ImpactStream
+            )
                 assertFalse(
                     IAllocatorsAllowlistExtension(address(_strategy))
                         .allowedAllocators(_allocator)
@@ -90,6 +103,13 @@ contract PropertiesAllo is HandlersParent {
                     bytes4(Errors.NOT_IMPLEMENTED.selector),
                     "property-id 1-a: wrong allocate() revert"
                 ); // allocate not implemented
+            else if (_poolStrategy(_strategy) == PoolStrategies.DonationVoting)
+                assertTrue(
+                    IAllocationExtension(_strategy).allocationStartTime() >
+                        block.timestamp ||
+                        IAllocationExtension(_strategy).allocationEndTime() <
+                        block.timestamp
+                );
             else fail("property-id 1-a: allocate call failed");
         }
     }
