@@ -14,6 +14,12 @@ import {QVSimple} from "contracts/strategies/examples/quadratic-voting/QVSimple.
 import {RFPSimple} from "contracts/strategies/examples/rfp/RFPSimple.sol";
 import {SQFSuperfluid} from "contracts/strategies/examples/sqf-superfluid/SQFSuperfluid.sol";
 
+import {Errors} from "contracts/core/libraries/Errors.sol";
+
+import {IAllocationExtension} from "contracts/strategies/extensions/allocate/IAllocationExtension.sol";
+import {IRecipientsExtension} from "contracts/strategies/extensions/register/IRecipientsExtension.sol";
+import {IAllocatorsAllowlistExtension} from "contracts/strategies/extensions/allocate/IAllocatorsAllowlistExtension.sol";
+
 contract Pools is Utils {
     Allo private allo;
 
@@ -34,6 +40,10 @@ contract Pools is Utils {
 
     mapping(PoolStrategies _strategy => address _implementation)
         internal _strategyImplementations;
+
+    //
+    // Initializers
+    //
 
     function _initImplementations(address _allo) internal {
         _strategyImplementations[PoolStrategies.DirectAllocation] = address(
@@ -65,6 +75,85 @@ contract Pools is Utils {
         ghost_poolIds.push(_poolId);
     }
 
+    //
+    // Assertions helpers
+    //
+
+    // Check strategy dependent post-conditions if a call to allocate is successful
+    function _assertValidAllocate(
+        address _strategy,
+        address _allocator
+    ) internal {
+        if (
+            _poolStrategy(_strategy) == PoolStrategies.QuadraticVoting ||
+            _poolStrategy(_strategy) == PoolStrategies.ImpactStream
+        )
+            assertTrue(
+                IAllocatorsAllowlistExtension(address(_strategy))
+                    .allowedAllocators(_allocator),
+                "property-id 1-a: allocator not allowed"
+            );
+        else if (_poolStrategy(_strategy) == PoolStrategies.DonationVoting)
+            assertTrue(
+                IAllocationExtension(_strategy).allocationStartTime() <=
+                    block.timestamp &&
+                    IAllocationExtension(_strategy).allocationEndTime() >=
+                    block.timestamp,
+                "property-id 1-a: allocate outside of allocation window"
+            );
+    }
+
+    function _assertInvalidAllocate(
+        address _strategy,
+        address _allocator,
+        bytes memory _ret
+    ) internal {
+        if (
+            _poolStrategy(_strategy) == PoolStrategies.QuadraticVoting ||
+            _poolStrategy(_strategy) == PoolStrategies.ImpactStream
+        )
+            assertFalse(
+                IAllocatorsAllowlistExtension(address(_strategy))
+                    .allowedAllocators(_allocator),
+                "property-id 1-a: allocator allowed but failed"
+            );
+        else if (
+            _poolStrategy(_strategy) == PoolStrategies.RFP ||
+            _poolStrategy(_strategy) == PoolStrategies.EasyRPGF
+        )
+            assertEq(
+                abi.decode(_ret, (bytes4)),
+                bytes4(Errors.NOT_IMPLEMENTED.selector),
+                "property-id 1-a: wrong allocate() revert"
+            ); // allocate not implemented
+        else if (_poolStrategy(_strategy) == PoolStrategies.DonationVoting) {
+            bytes4 _error = abi.decode(_ret, (bytes4));
+
+            // Getter for recipient status is not implemented yet
+            if (
+                abi.decode(_ret, (bytes4)) !=
+                bytes4(
+                    IRecipientsExtension
+                        .RecipientsExtension_RecipientNotAccepted
+                        .selector
+                )
+            )
+                assertTrue(
+                    IAllocationExtension(_strategy).allocationStartTime() >
+                        block.timestamp ||
+                        IAllocationExtension(_strategy).allocationEndTime() <
+                        block.timestamp
+                );
+        } else
+            fail(
+                "property-id 1-a: allocate call failed but should have succeeded"
+            );
+    }
+
+    //
+    // Getters
+    //
+
     // reverse lookup pool id -> strategy type
     function _poolStrategy(uint256 _poolId) internal returns (PoolStrategies) {
         IAllo.Pool memory _pool = allo.getPool(_poolId);
@@ -78,15 +167,11 @@ contract Pools is Utils {
         emit TestFailure("Wrong pool strategy implementation id");
     }
 
-    event log(address);
-
     // reverse lookup pool address -> strategy type
     function _poolStrategy(
         address _strategy
     ) internal returns (PoolStrategies) {
-        emit log(_strategy);
         for (uint256 i = 1; i <= uint256(type(PoolStrategies).max); i++) {
-            emit log(_strategyImplementations[PoolStrategies(i)]);
             if (_strategyImplementations[PoolStrategies(i)] == _strategy)
                 return PoolStrategies(i);
         }

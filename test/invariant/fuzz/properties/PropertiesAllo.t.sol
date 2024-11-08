@@ -7,13 +7,14 @@ import {HandlersParent} from "../handlers/HandlersParent.t.sol";
 import {IAllo, Allo, Metadata} from "contracts/core/Allo.sol";
 import {IRegistry, Registry} from "contracts/core/Registry.sol";
 import {IBaseStrategy} from "contracts/strategies/BaseStrategy.sol";
-import {IAllocationExtension} from "contracts/strategies/extensions/allocate/IAllocationExtension.sol";
-import {IAllocatorsAllowlistExtension} from "contracts/strategies/extensions/allocate/IAllocatorsAllowlistExtension.sol";
+
 import {Errors} from "contracts/core/libraries/Errors.sol";
 
 import {FuzzERC20, ERC20} from "../helpers/FuzzERC20.sol";
 
 contract PropertiesAllo is HandlersParent {
+    event test(bytes32);
+
     ///@custom:property-id 1-a
     ///@custom:property one should always be able to allocate for recipient
     function prop_userShouldBeAbleToAllocateForRecipient(
@@ -70,47 +71,10 @@ contract PropertiesAllo is HandlersParent {
                 "property-id 1-a: wrong balancer after allocation"
             );
 
-            if (
-                _poolStrategy(_strategy) == PoolStrategies.QuadraticVoting ||
-                _poolStrategy(_strategy) == PoolStrategies.ImpactStream
-            )
-                assertTrue(
-                    IAllocatorsAllowlistExtension(address(_strategy))
-                        .allowedAllocators(_allocator)
-                );
-            else if (_poolStrategy(_strategy) == PoolStrategies.DonationVoting)
-                assertTrue(
-                    IAllocationExtension(_strategy).allocationStartTime() <=
-                        block.timestamp &&
-                        IAllocationExtension(_strategy).allocationEndTime() >=
-                        block.timestamp
-                );
+            // Check strategy specific post-conditions
+            _assertValidAllocate(_strategy, _allocator);
         } else {
-            if (
-                _poolStrategy(_strategy) == PoolStrategies.QuadraticVoting ||
-                _poolStrategy(_strategy) == PoolStrategies.ImpactStream
-            )
-                assertFalse(
-                    IAllocatorsAllowlistExtension(address(_strategy))
-                        .allowedAllocators(_allocator)
-                );
-            else if (
-                _poolStrategy(_strategy) == PoolStrategies.RFP ||
-                _poolStrategy(_strategy) == PoolStrategies.EasyRPGF
-            )
-                assertEq(
-                    abi.decode(_ret, (bytes4)),
-                    bytes4(Errors.NOT_IMPLEMENTED.selector),
-                    "property-id 1-a: wrong allocate() revert"
-                ); // allocate not implemented
-            else if (_poolStrategy(_strategy) == PoolStrategies.DonationVoting)
-                assertTrue(
-                    IAllocationExtension(_strategy).allocationStartTime() >
-                        block.timestamp ||
-                        IAllocationExtension(_strategy).allocationEndTime() <
-                        block.timestamp
-                );
-            else fail("property-id 1-a: allocate call failed");
+            _assertInvalidAllocate(_strategy, _allocator, _ret);
         }
     }
 
@@ -612,7 +576,7 @@ contract PropertiesAllo is HandlersParent {
     ) public {
         // Avoid setting one of the callers as forwarder (resulting in invalid calldata)
         _newForwarder = address(
-            uint160(bound(uint160(_newForwarder), 0xa0000, type(uint160).max))
+            uint160(bound(uint160(_newForwarder), 0xa0001, type(uint160).max))
         );
         vm.prank(allo.owner());
         (bool _success, ) = address(allo).call(
