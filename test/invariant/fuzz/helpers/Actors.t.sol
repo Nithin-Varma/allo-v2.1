@@ -66,9 +66,11 @@ contract Actors is Utils {
         delete _ghost_anchorOf[_actor];
     }
 
-    // Returns the anchor address, as it is the address which will be used later one to interact
-    // with the protocol
-    function _pickActor(uint256 _seed) internal view returns (address _actor) {
+    function _pickAnchor(uint256 _seed) internal view returns (address _actor) {
         _actor = _ghost_anchorOf[_ghost_actors[_seed % _ghost_actors.length]];
+    }
+
+    function _pickActor(uint256 _seed) internal view returns (address _actor) {
+        _actor = _ghost_actors[_seed % _ghost_actors.length];
     }
 }

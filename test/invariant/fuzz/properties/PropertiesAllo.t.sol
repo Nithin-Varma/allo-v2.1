@@ -22,7 +22,7 @@ contract PropertiesAllo is HandlersParent {
         uint256 _idSeed,
         uint256 _amount
     ) public {
-        address _recipient = _pickActor(_actorSeed);
+        address _recipient = _pickAnchor(_actorSeed);
 
         _idSeed = bound(_idSeed, 0, ghost_poolIds.length - 1);
         uint256 _poolId = ghost_poolIds[_idSeed];
@@ -86,7 +86,7 @@ contract PropertiesAllo is HandlersParent {
         uint256 _actorSeed,
         uint256 _amount
     ) public {
-        address _recipient = _pickActor(_actorSeed);
+        address _recipient = _pickAnchor(_actorSeed);
 
         _idSeed = bound(_idSeed, 0, ghost_poolIds.length - 1);
         uint256 _poolId = ghost_poolIds[_idSeed];
@@ -107,7 +107,7 @@ contract PropertiesAllo is HandlersParent {
 
         uint256 _recipientPreviousBalance = token.balanceOf(_recipient);
 
-        FuzzERC20(address(token)).mint(address(_strategy), _amount);
+        token.transfer(address(_strategy), _amount);
         _recipientPreviousBalance = token.balanceOf(_recipient);
         uint256 _poolAmount = _strategy.getPoolAmount();
 
@@ -147,14 +147,17 @@ contract PropertiesAllo is HandlersParent {
     ///@custom:property only profile owner or member can create a pool
     ///@custom:property-id 9
     ///@custom:property initial admin is always the creator of the pool
-    function prop_profileOwnerCanAlwaysCreateAPool(uint256 _msgValue) public {
+    function prop_profileOwnerCanAlwaysCreateAPool(
+        uint256 _msgValue,
+        uint256 _anchorSeed
+    ) public {
         IRegistry.Profile memory _profile = registry.getProfileByAnchor(
-            msg.sender
+            _pickAnchor(_anchorSeed)
         );
 
         bool _isOwnerOrMember = registry.isOwnerOrMemberOfProfile(
             _profile.id,
-            msg.sender
+            _ghost_anchorOf[msg.sender]
         );
 
         // Create a pool
@@ -199,15 +202,16 @@ contract PropertiesAllo is HandlersParent {
     ///@custom:property-id 5-a
     ///@custom:property profile owner is the only one who can always add profile members (name ⇒ new anchor())
     function prop_onlyProfileOwnerCanAddProfileMember(
-        uint256 _actorSeed
+        uint256 _actorSeed,
+        uint256 _profileSeed
     ) public {
         // Get the profile ID
         IRegistry.Profile memory _profile = registry.getProfileByAnchor(
-            _ghost_anchorOf[msg.sender]
+            _pickAnchor(_profileSeed)
         );
 
         address[] memory _members = new address[](1);
-        address _newMember = _pickActor(_actorSeed);
+        address _newMember = _pickAnchor(_actorSeed);
         _members[0] = _newMember;
 
         vm.prank(msg.sender);
@@ -239,10 +243,12 @@ contract PropertiesAllo is HandlersParent {
 
     ///@custom:property-id 5-b
     ///@custom:property profile owner is the only one who can always remove profile members (name ⇒ new anchor())
-    function prop_onlyProfileOwnerCanRemoveProfileMembers() public {
+    function prop_onlyProfileOwnerCanRemoveProfileMembers(
+        uint256 _anchorSeed
+    ) public {
         // Get the profile ID
         IRegistry.Profile memory _profile = registry.getProfileByAnchor(
-            _ghost_anchorOf[msg.sender]
+            _pickAnchor(_anchorSeed)
         );
         address _memberToRemove = _ghost_roleMembers[_profile.id][
             _ghost_roleMembers[_profile.id].length - 1
@@ -280,11 +286,12 @@ contract PropertiesAllo is HandlersParent {
     ///@custom:property-id 6
     ///@custom:property profile owner is the only one who can always initiate a change of profile owner (2 steps)
     function prop_onlyProfileOwnerCanInitiateChangeOfProfileOwner(
-        address _newOwner
+        address _newOwner,
+        uint256 _anchorSeed
     ) public {
         // Get the profile ID
         IRegistry.Profile memory _profile = registry.getProfileByAnchor(
-            _ghost_anchorOf[msg.sender]
+            _pickAnchor(_anchorSeed)
         );
 
         // Profile owner need to initiate from its address, not its' anchor
@@ -329,7 +336,7 @@ contract PropertiesAllo is HandlersParent {
 
         bytes32 _poolAdminRole = keccak256(abi.encodePacked(_poolId, "admin"));
 
-        address _newAdmin = _pickActor(_actorSeed);
+        address _newAdmin = _pickAnchor(_actorSeed);
 
         vm.prank(msg.sender);
         (bool _success, ) = address(allo).call(
@@ -575,9 +582,12 @@ contract PropertiesAllo is HandlersParent {
         address _newForwarder
     ) public {
         // Avoid setting one of the callers as forwarder (resulting in invalid calldata)
-        _newForwarder = address(
-            uint160(bound(uint160(_newForwarder), 0xa0001, type(uint160).max))
-        );
+        if (_newForwarder != address(0))
+            _newForwarder = address(
+                uint160(
+                    bound(uint160(_newForwarder), 0xa0001, type(uint160).max)
+                )
+            );
         vm.prank(allo.owner());
         (bool _success, ) = address(allo).call(
             abi.encodeCall(allo.updateTrustedForwarder, (_newForwarder))
@@ -615,6 +625,7 @@ contract PropertiesAllo is HandlersParent {
             );
 
             // rollback the change to use the original registry
+            vm.prank(allo.owner());
             allo.updateRegistry(address(registry));
             assertEq(
                 address(allo.getRegistry()),
