@@ -88,6 +88,11 @@ contract PropertiesAllo is HandlersParent {
     ) public {
         address _recipient = _pickAnchor(_actorSeed);
 
+        address[] memory _recipients = new address[](1);
+        _recipients[0] = _recipient;
+
+        bytes memory _data = new bytes(0);
+
         _idSeed = bound(_idSeed, 0, ghost_poolIds.length - 1);
         uint256 _poolId = ghost_poolIds[_idSeed];
 
@@ -112,24 +117,25 @@ contract PropertiesAllo is HandlersParent {
         uint256 _poolAmount = _strategy.getPoolAmount();
 
         vm.prank(_manager);
-        (bool _success, ) = address(_strategy).call(
-            abi.encodeCall(
-                _strategy.withdraw,
-                (address(token), _amount, _recipient)
-            )
+        (bool _success, ) = address(allo).call(
+            abi.encodeCall(allo.distribute, (_poolId, _recipients, _data))
         );
 
         if (_success) {
             assertEq(
                 token.balanceOf(_recipient),
                 _recipientPreviousBalance + _amount,
-                "property-id 1-b: withdraw failed"
+                "property-id 1-b: distribute succeed but wrong recipient balance"
             );
+
+            _assertValidWithdraw(address(_strategy), _amount);
         } else {
             assertTrue(
                 _amount > _poolAmount,
-                "property-id 1-b: withdraw failed"
+                "property-id 1-b: distribute failed with correct amounts"
             );
+
+            _assertInvalidWithdraw(address(_strategy), _amount);
         }
     }
 
