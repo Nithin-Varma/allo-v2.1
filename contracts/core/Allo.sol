@@ -237,7 +237,7 @@ contract Allo is IAllo, Initializable, Ownable, AccessControlUpgradeable, Reentr
         _pool.metadata = _metadata;
 
         emit PoolMetadataUpdated(_poolId, _metadata);
-    }
+    } 
 
     /// @notice Updates the _registry address.
     /// @dev Use this to update the _registry address. 'msg.sender' must be Allo owner.

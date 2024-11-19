@@ -99,7 +99,7 @@ interface IBaseStrategy {
     /// @param _poolId The ID of the pool
     /// @param _data The encoded data
     function initialize(uint256 _poolId, bytes memory _data) external;
-
+ 
     /// @notice Increases the pool amount.
     /// @param _amount The amount to increase the pool by
     function increasePoolAmount(uint256 _amount) external;
